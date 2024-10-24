@@ -462,5 +462,5 @@ def main():
     elif calculator_type == "بەرزبونەوەی پلەی کوڵان":
         BoilingPointCalculator()
 
-
-
+if __name__ == "__main__":
+    main()
