@@ -24,7 +24,7 @@ def load_images():
         st.error(f"An error occurred while loading images: {str(e)}")
         return None, None
 
-class FreezingPointCalculator:
+class BoilingPointCalculator:
     def __init__(self):
         st.title("نزمبونەوەی پلەی بەستن: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی")
         self.create_layout()
@@ -42,8 +42,8 @@ class FreezingPointCalculator:
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            self.delta_tf_input = st.text_input("Δtf:", key="delta_tf")
-            self.kf_input = st.text_input("Kf:", key="kf")
+            self.delta_tb_input = st.text_input("Δtb:", key="delta_tb")
+            self.kb_input = st.text_input("Kb:", key="kb")
             self.molality_input = st.text_input("**molality:**", key="molality")
 
         with col2:
@@ -73,7 +73,7 @@ class FreezingPointCalculator:
 
     def clear_inputs(self):
         keys_to_clear = [
-            "delta_tf", "kf", "molality", "t_solution", "t_solvent",
+            "delta_tb", "kb", "molality", "t_solution", "t_solvent",
             "mass_solute", "mr", "moles_solute", "kg_solvent"
         ]
         for key in keys_to_clear:
@@ -109,7 +109,7 @@ class FreezingPointCalculator:
         return f"{value:.4f}" if value is not None else "unknown"
 
     def show_calculation_step(self, equation, values, result):
-        if equation == 'Δtf = گیراوە-T - توێنەر-T':
+        if equation == 'Δtb = گیراوە-T - توێنەر-T':
             values_str = f" = {values[0]:.4f} - {values[1]:.4f}"
         else:
             values_str = " = " + " / ".join(f"{v:.4f}" for v in values)
@@ -129,8 +129,8 @@ class FreezingPointCalculator:
         st.write("-" * 50)
 
         inputs = {
-            'delta_tf': self.get_float_value("delta_tf"),
-            'kf': self.get_float_value("kf"),
+            'delta_tb': self.get_float_value("delta_tb"),
+            'kb': self.get_float_value("kb"),
             'molality': self.get_float_value("molality"),
             't_solution': self.get_float_value("t_solution"),
             't_solvent': self.get_float_value("t_solvent"),
@@ -163,26 +163,26 @@ class FreezingPointCalculator:
 
         calculations = [
             {
-                'param': 'delta_tf',
-                'func': lambda kf, m: kf * m,
-                'equation': 'Δtf = Kf × molality',
-                'params': ['kf', 'molality']
+                'param': 'delta_tb',
+                'func': lambda kb, m: kb * m,
+                'equation': 'Δtb = Kb × molality',
+                'params': ['kb', 'molality']
             },
             {
-                'param': 'delta_tf',
+                'param': 'delta_tb',
                 'func': lambda ts, tsv: ts - tsv,
-                'equation': 'Δtf = گیراوە-T - توێنەر-T',
+                'equation': 'Δtb = گیراوە-T - توێنەر-T',
                 'params': ['t_solution', 't_solvent']
             },
             {
                 'param': 'molality',
-                'func': lambda dt, kf: dt / kf,
-                'equation': 'molality = Δtf / Kf',
-                'params': ['delta_tf', 'kf']
+                'func': lambda dt, kb: dt / kb,
+                'equation': 'molality = Δtb / Kb',
+                'params': ['delta_tb', 'kb']
             },
             {
                 'param': 'molality',
-                'func': lambda mol, kg: mol / kg,
+                'func': lambda m, kg: m / kg,
                 'equation': 'molality = تواوە-mole / توێنەر-Kg',
                 'params': ['moles_solute', 'kg_solvent']
             },
@@ -216,4 +216,4 @@ class FreezingPointCalculator:
 if __name__ == "__main__":
     image1, image2 = load_images()
     if image1 and image2:
-        FreezingPointCalculator()
+        BoilingPointCalculator()
