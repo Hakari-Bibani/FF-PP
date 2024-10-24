@@ -117,15 +117,6 @@ class FreezingPointCalculator:
             values_str = " = " + " / ".join(f"{v:.4f}" for v in values)
         st.write(f"{equation}{values_str} = {result:.4f}")
 
-    def try_calculate_value(self, inputs, param_name, calculation_func, equation, params_needed):
-        if inputs[param_name] is None and all(inputs[p] is not None for p in params_needed):
-            values = [inputs[p] for p in params_needed]
-            result = calculation_func(*values)
-            self.show_calculation_step(equation, values, result)
-            inputs[param_name] = result
-            return True
-        return False
-
     def calculate(self):
         st.write("هەنگاوەکانی ژمێرکاری")
         st.write("-" * 50)
@@ -163,57 +154,54 @@ class FreezingPointCalculator:
                 'kilograms'
             )
 
-        calculations = [
-            {
-                'param': 'delta_tf',
-                'func': lambda kf, m: kf * m,
-                'equation': 'Δtf = Kf × molality',
-                'params': ['kf', 'molality']
-            },
-            {
-                'param': 'delta_tf',
-                'func': lambda ts, tsv: ts - tsv,
-                'equation': 'Δtf = گیراوە-T - توێنەر-T',
-                'params': ['t_solution', 't_solvent']
-            },
-            {
-                'param': 'molality',
-                'func': lambda dt, kf: dt / kf,
-                'equation': 'molality = Δtf / Kf',
-                'params': ['delta_tf', 'kf']
-            },
-            {
-                'param': 'molality',
-                'func': lambda mol, kg: mol / kg,
-                'equation': 'molality = تواوە-mole / توێنەر-Kg',
-                'params': ['moles_solute', 'kg_solvent']
-            },
-            {
-                'param': 'moles_solute',
-                'func': lambda mass, mr: mass / mr,
-                'equation': 'تواوە-mole = تواوە-mass / Mr',
-                'params': ['mass_solute', 'mr']
-            },
-            {
-                'param': 'moles_solute',
-                'func': lambda m, kg: m * kg,
-                'equation': 'تواوە-mole = molality × توێنەر-Kg',
-                'params': ['molality', 'kg_solvent']
-            },
-            {
-                'param': 'mass_solute',
-                'func': lambda mol, mr: mol * mr,
-                'equation': 'تواوە-mass = تواوە-mole × Mr',
-                'params': ['moles_solute', 'mr']
-            },
-        ]
+        # Iteratively calculate all possible values
+        calculated = True
+        while calculated:
+            calculated = False
 
-        for calculation in calculations:
-            self.try_calculate_value(
-                inputs, calculation['param'], calculation['func'],
-                calculation['equation'], calculation['params']
-            )
+            # Calculate Δtf
+            if inputs['delta_tf'] is None and inputs['kf'] is not None and inputs['molality'] is not None:
+                inputs['delta_tf'] = inputs['kf'] * inputs['molality']
+                self.show_calculation_step('Δtf = Kf × molality', [inputs['kf'], inputs['molality']], inputs['delta_tf'])
+                calculated = True
 
+            # Calculate Δtf using T_solution and T_solvent
+            if inputs['delta_tf'] is None and inputs['t_solution'] is not None and inputs['t_solvent'] is not None:
+                inputs['delta_tf'] = inputs['t_solution'] - inputs['t_solvent']
+                self.show_calculation_step('Δtf = گیراوە-T - توێنەر-T', [inputs['t_solution'], inputs['t_solvent']], inputs['delta_tf'])
+                calculated = True
+
+            # Calculate molality from Δtf and Kf
+            if inputs['molality'] is None and inputs['delta_tf'] is not None and inputs['kf'] is not None:
+                inputs['molality'] = inputs['delta_tf'] / inputs['kf']
+                self.show_calculation_step('molality = Δtf / Kf', [inputs['delta_tf'], inputs['kf']], inputs['molality'])
+                calculated = True
+
+            # Calculate molality from moles_solute and kg_solvent
+            if inputs['molality'] is None and inputs['moles_solute'] is not None and inputs['kg_solvent'] is not None:
+                inputs['molality'] = inputs['moles_solute'] / inputs['kg_solvent']
+                self.show_calculation_step('molality = تواوە-mole / توێنەر-Kg', [inputs['moles_solute'], inputs['kg_solvent']], inputs['molality'])
+                calculated = True
+
+            # Calculate moles_solute from mass_solute and mr
+            if inputs['moles_solute'] is None and inputs['mass_solute'] is not None and inputs['mr'] is not None:
+                inputs['moles_solute'] = inputs['mass_solute'] / inputs['mr']
+                self.show_calculation_step('مۆڵی تواوە = بارستەی تواوە / Mr', [inputs['mass_solute'], inputs['mr']], inputs['moles_solute'])
+                calculated = True
+
+            # Calculate mass_solute from moles_solute and mr
+            if inputs['mass_solute'] is None and inputs['moles_solute'] is not None and inputs['mr'] is not None:
+                inputs['mass_solute'] = inputs['moles_solute'] * inputs['mr']
+                self.show_calculation_step('بارستەی تواوە = مۆڵی تواوە × Mr', [inputs['moles_solute'], inputs['mr']], inputs['mass_solute'])
+                calculated = True
+
+            # Calculate kg_solvent from molality and moles_solute
+            if inputs['kg_solvent'] is None and inputs['molality'] is not None and inputs['moles_solute'] is not None:
+                inputs['kg_solvent'] = inputs['moles_solute'] / inputs['molality']
+                self.show_calculation_step('توێنەر-Kg = مۆڵی تواوە / molality', [inputs['moles_solute'], inputs['molality']], inputs['kg_solvent'])
+                calculated = True
+
+        st.write("-" * 50)
         for param in inputs:
             st.write(f"{param}: {self.format_value(inputs[param])}")
 
