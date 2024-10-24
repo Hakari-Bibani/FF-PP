@@ -24,7 +24,9 @@ def load_images():
         st.error(f"An error occurred while loading images: {str(e)}")
         return None, None
 
-class BoilingPointCalculator:
+image1, image2 = load_images()
+
+class FreezingPointCalculator:
     def __init__(self):
         st.title("نزمبونەوەی پلەی بەستن: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی")
         self.create_layout()
@@ -42,8 +44,8 @@ class BoilingPointCalculator:
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            self.delta_tb_input = st.text_input("Δtb:", key="delta_tb")
-            self.kb_input = st.text_input("Kb:", key="kb")
+            self.delta_tf_input = st.text_input("Δtf:", key="delta_tf")
+            self.kf_input = st.text_input("Kf:", key="kf")
             self.molality_input = st.text_input("**molality:**", key="molality")
 
         with col2:
@@ -73,7 +75,7 @@ class BoilingPointCalculator:
 
     def clear_inputs(self):
         keys_to_clear = [
-            "delta_tb", "kb", "molality", "t_solution", "t_solvent",
+            "delta_tf", "kf", "molality", "t_solution", "t_solvent",
             "mass_solute", "mr", "moles_solute", "kg_solvent"
         ]
         for key in keys_to_clear:
@@ -109,7 +111,7 @@ class BoilingPointCalculator:
         return f"{value:.4f}" if value is not None else "unknown"
 
     def show_calculation_step(self, equation, values, result):
-        if equation == 'Δtb = گیراوە-T - توێنەر-T':
+        if equation == 'Δtf = گیراوە-T - توێنەر-T':
             values_str = f" = {values[0]:.4f} - {values[1]:.4f}"
         else:
             values_str = " = " + " / ".join(f"{v:.4f}" for v in values)
@@ -129,8 +131,8 @@ class BoilingPointCalculator:
         st.write("-" * 50)
 
         inputs = {
-            'delta_tb': self.get_float_value("delta_tb"),
-            'kb': self.get_float_value("kb"),
+            'delta_tf': self.get_float_value("delta_tf"),
+            'kf': self.get_float_value("kf"),
             'molality': self.get_float_value("molality"),
             't_solution': self.get_float_value("t_solution"),
             't_solvent': self.get_float_value("t_solvent"),
@@ -163,26 +165,26 @@ class BoilingPointCalculator:
 
         calculations = [
             {
-                'param': 'delta_tb',
-                'func': lambda kb, m: kb * m,
-                'equation': 'Δtb = Kb × molality',
-                'params': ['kb', 'molality']
+                'param': 'delta_tf',
+                'func': lambda kf, m: kf * m,
+                'equation': 'Δtf = Kf × molality',
+                'params': ['kf', 'molality']
             },
             {
-                'param': 'delta_tb',
+                'param': 'delta_tf',
                 'func': lambda ts, tsv: ts - tsv,
-                'equation': 'Δtb = گیراوە-T - توێنەر-T',
+                'equation': 'Δtf = گیراوە-T - توێنەر-T',
                 'params': ['t_solution', 't_solvent']
             },
             {
                 'param': 'molality',
-                'func': lambda dt, kb: dt / kb,
-                'equation': 'molality = Δtb / Kb',
-                'params': ['delta_tb', 'kb']
+                'func': lambda dt, kf: dt / kf,
+                'equation': 'molality = Δtf / Kf',
+                'params': ['delta_tf', 'kf']
             },
             {
                 'param': 'molality',
-                'func': lambda m, kg: m / kg,
+                'func': lambda mol, kg: mol / kg,
                 'equation': 'molality = تواوە-mole / توێنەر-Kg',
                 'params': ['moles_solute', 'kg_solvent']
             },
@@ -203,17 +205,17 @@ class BoilingPointCalculator:
                 'func': lambda mol, mr: mol * mr,
                 'equation': 'تواوە-mass = تواوە-mole × Mr',
                 'params': ['moles_solute', 'mr']
-            }
+            },
         ]
 
-        for calc in calculations:
-            self.try_calculate_value(inputs, calc['param'], calc['func'], calc['equation'], calc['params'])
+        for calculation in calculations:
+            self.try_calculate_value(
+                inputs, calculation['param'], calculation['func'],
+                calculation['equation'], calculation['params']
+            )
 
-        st.write("بەرهەمی کۆتایی")
-        for key in inputs:
-            st.write(f"{key}: {self.format_value(inputs[key])}")
+        for param in inputs:
+            st.write(f"{param}: {self.format_value(inputs[param])}")
 
 if __name__ == "__main__":
-    image1, image2 = load_images()
-    if image1 and image2:
-        BoilingPointCalculator()
+    FreezingPointCalculator()
