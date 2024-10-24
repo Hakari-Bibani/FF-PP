@@ -154,56 +154,76 @@ class FreezingPointCalculator:
                 'kilograms'
             )
 
-        # Iteratively calculate all possible values
-        calculated = True
-        while calculated:
-            calculated = False
+        while True:
+            previous_inputs = inputs.copy()  # Keep track of the previous state
+            
+            calculations = [
+                {
+                    'param': 'delta_tf',
+                    'func': lambda kf, m: kf * m,
+                    'equation': 'Δtf = Kf × molality',
+                    'params': ['kf', 'molality']
+                },
+                {
+                    'param': 'delta_tf',
+                    'func': lambda ts, tsv: ts - tsv,
+                    'equation': 'Δtf = گیراوە-T - توێنەر-T',
+                    'params': ['t_solution', 't_solvent']
+                },
+                {
+                    'param': 'molality',
+                    'func': lambda dt, kf: dt / kf,
+                    'equation': 'molality = Δtf / Kf',
+                    'params': ['delta_tf', 'kf']
+                },
+                {
+                    'param': 'molality',
+                    'func': lambda m, kg: m / kg,
+                    'equation': 'molality = تواوە-mole / توێنەر-Kg',
+                    'params': ['moles_solute', 'kg_solvent']
+                },
+                {
+                    'param': 'moles_solute',
+                    'func': lambda mass, mr: mass / mr,
+                    'equation': 'تواوە-mole = تواوە-mass / Mr',
+                    'params': ['mass_solute', 'mr']
+                },
+                {
+                    'param': 'moles_solute',
+                    'func': lambda m, kg: m * kg,
+                    'equation': 'تواوە-mole = molality × توێنەر-Kg',
+                    'params': ['molality', 'kg_solvent']
+                },
+                {
+                    'param': 'mass_solute',
+                    'func': lambda mol, mr: mol * mr,
+                    'equation': 'تواوە-mass = تواوە-mole × Mr',
+                    'params': ['moles_solute', 'mr']
+                },
+            ]
 
-            # Calculate Δtf
-            if inputs['delta_tf'] is None and inputs['kf'] is not None and inputs['molality'] is not None:
-                inputs['delta_tf'] = inputs['kf'] * inputs['molality']
-                self.show_calculation_step('Δtf = Kf × molality', [inputs['kf'], inputs['molality']], inputs['delta_tf'])
-                calculated = True
+            for calculation in calculations:
+                self.try_calculate_value(
+                    inputs, calculation['param'], calculation['func'],
+                    calculation['equation'], calculation['params']
+                )
 
-            # Calculate Δtf using T_solution and T_solvent
-            if inputs['delta_tf'] is None and inputs['t_solution'] is not None and inputs['t_solvent'] is not None:
-                inputs['delta_tf'] = inputs['t_solution'] - inputs['t_solvent']
-                self.show_calculation_step('Δtf = گیراوە-T - توێنەر-T', [inputs['t_solution'], inputs['t_solvent']], inputs['delta_tf'])
-                calculated = True
+            if inputs == previous_inputs:  # Exit if no new values were found
+                break
 
-            # Calculate molality from Δtf and Kf
-            if inputs['molality'] is None and inputs['delta_tf'] is not None and inputs['kf'] is not None:
-                inputs['molality'] = inputs['delta_tf'] / inputs['kf']
-                self.show_calculation_step('molality = Δtf / Kf', [inputs['delta_tf'], inputs['kf']], inputs['molality'])
-                calculated = True
-
-            # Calculate molality from moles_solute and kg_solvent
-            if inputs['molality'] is None and inputs['moles_solute'] is not None and inputs['kg_solvent'] is not None:
-                inputs['molality'] = inputs['moles_solute'] / inputs['kg_solvent']
-                self.show_calculation_step('molality = تواوە-mole / توێنەر-Kg', [inputs['moles_solute'], inputs['kg_solvent']], inputs['molality'])
-                calculated = True
-
-            # Calculate moles_solute from mass_solute and mr
-            if inputs['moles_solute'] is None and inputs['mass_solute'] is not None and inputs['mr'] is not None:
-                inputs['moles_solute'] = inputs['mass_solute'] / inputs['mr']
-                self.show_calculation_step('مۆڵی تواوە = بارستەی تواوە / Mr', [inputs['mass_solute'], inputs['mr']], inputs['moles_solute'])
-                calculated = True
-
-            # Calculate mass_solute from moles_solute and mr
-            if inputs['mass_solute'] is None and inputs['moles_solute'] is not None and inputs['mr'] is not None:
-                inputs['mass_solute'] = inputs['moles_solute'] * inputs['mr']
-                self.show_calculation_step('بارستەی تواوە = مۆڵی تواوە × Mr', [inputs['moles_solute'], inputs['mr']], inputs['mass_solute'])
-                calculated = True
-
-            # Calculate kg_solvent from molality and moles_solute
-            if inputs['kg_solvent'] is None and inputs['molality'] is not None and inputs['moles_solute'] is not None:
-                inputs['kg_solvent'] = inputs['moles_solute'] / inputs['molality']
-                self.show_calculation_step('توێنەر-Kg = مۆڵی تواوە / molality', [inputs['moles_solute'], inputs['molality']], inputs['kg_solvent'])
-                calculated = True
-
-        st.write("-" * 50)
+        # Display final results
+        st.write("بەرزترین نیشانی ژمێرکاری:")
         for param in inputs:
             st.write(f"{param}: {self.format_value(inputs[param])}")
+
+    def try_calculate_value(self, inputs, param, func, equation, params):
+        if param in inputs and inputs[param] is not None:
+            return  # Skip if this parameter is already known
+
+        if all(p in inputs and inputs[p] is not None for p in params):
+            result = func(*(inputs[p] for p in params))
+            inputs[param] = result
+            self.show_calculation_step(equation, [inputs[p] for p in params], result)
 
 if __name__ == "__main__":
     FreezingPointCalculator()
