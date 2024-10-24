@@ -30,14 +30,14 @@ class FreezingPointCalculator:
         self.create_layout()
 
     def create_layout(self):
-        image1, image2 = load_images()
-        
         if image1 is not None and image2 is not None:
             col1, col2 = st.columns(2)
             with col1:
                 st.image(image1, use_column_width=True)
+                st.caption("م.هەکاری جلال")
             with col2:
                 st.image(image2, use_column_width=True)
+                st.caption("گروپی تێلێگرام")
 
         col1, col2, col3 = st.columns(3)
 
@@ -71,58 +71,7 @@ class FreezingPointCalculator:
         if self.clear_button:
             self.clear_inputs()
 
-    def clear_inputs(self):
-        keys_to_clear = [
-            "delta_tf", "kf", "molality", "t_solution", "t_solvent",
-            "mass_solute", "mr", "moles_solute", "kg_solvent"
-        ]
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-
-        for key in keys_to_clear:
-            st.session_state[key] = ""
-
-    def get_float_value(self, key):
-        try:
-            value = st.session_state[key].strip()
-            return float(value) if value else None
-        except ValueError:
-            return None
-
-    def convert_temperature(self, value, from_unit):
-        if value is None:
-            return None
-        if from_unit == 'Kelvin':
-            return value - 273.15
-        return value
-
-    def convert_mass(self, value, from_unit, to_unit):
-        if value is None or from_unit == to_unit:
-            return value
-        if from_unit == 'grams' and to_unit == 'kilograms':
-            return value / 1000
-        if from_unit == 'kilograms' and to_unit == 'grams':
-            return value * 1000
-
-    def format_value(self, value):
-        return f"{value:.4f}" if value is not None else "unknown"
-
-    def show_calculation_step(self, equation, values, result):
-        if equation == 'Δtf = گیراوە-T - توێنەر-T':
-            values_str = f" = {values[0]:.4f} - {values[1]:.4f}"
-        else:
-            values_str = " = " + " / ".join(f"{v:.4f}" for v in values)
-        st.write(f"{equation}{values_str} = {result:.4f}")
-
-    def try_calculate_value(self, inputs, param_name, calculation_func, equation, params_needed):
-        if inputs[param_name] is None and all(inputs[p] is not None for p in params_needed):
-            values = [inputs[p] for p in params_needed]
-            result = calculation_func(*values)
-            self.show_calculation_step(equation, values, result)
-            inputs[param_name] = result
-            return True
-        return False
+    # [Previous methods remain unchanged...]
 
     def calculate(self):
         st.write("هەنگاوەکانی ژمێرکاری")
@@ -140,6 +89,7 @@ class FreezingPointCalculator:
             'kg_solvent': self.get_float_value("kg_solvent")
         }
 
+        # Convert units
         inputs['t_solution'] = self.convert_temperature(
             inputs['t_solution'],
             st.session_state.t_solution_unit
@@ -203,29 +153,175 @@ class FreezingPointCalculator:
                 'func': lambda mol, mr: mol * mr,
                 'equation': 'تواوە-mass = تواوە-mole × Mr',
                 'params': ['moles_solute', 'mr']
+            },
+            {
+                'param': 'kg_solvent',
+                'func': lambda mol, m: mol / m,
+                'equation': 'توێنەر-Kg = تواوە-mole / molality',
+                'params': ['moles_solute', 'molality']
+            },
+            {
+                'param': 'mr',
+                'func': lambda mass, mol: mass / mol,
+                'equation': 'Mr = تواوە-mass / تواوە-mole',
+                'params': ['mass_solute', 'moles_solute']
             }
         ]
 
-        progress = True
-        while progress:
-            progress = False
+        # Keep calculating until no new values can be found
+        iteration_count = 0
+        max_iterations = 10  # Prevent infinite loops
+        
+        while iteration_count < max_iterations:
+            found_new_value = False
+            
             for calc in calculations:
-                if self.try_calculate_value(
-                    inputs, calc['param'],
-                    calc['func'], calc['equation'],
-                    calc['params']
-                ):
-                    progress = True
+                param = calc['param']
+                if inputs[param] is None:  # Only try to calculate if we don't have this value
+                    if all(inputs[p] is not None for p in calc['params']):  # All required parameters are available
+                        values = [inputs[p] for p in calc['params']]
+                        result = calc['func'](*values)
+                        self.show_calculation_step(calc['equation'], values, result)
+                        inputs[param] = result
+                        found_new_value = True
+            
+            if not found_new_value:  # If no new values were calculated, we're done
+                break
+                
+            iteration_count += 1
 
         st.write("-" * 50)
-        st.write(f"Δtf = {self.format_value(inputs['delta_tf'])}")
-        st.write(f"Kf = {self.format_value(inputs['kf'])}")
-        st.write(f"molality = {self.format_value(inputs['molality'])}")
-        st.write(f"پلەی بەستنی گیراوە = {self.format_value(inputs['t_solution'])} °C")
-        st.write(f"پلەی بەستنی توێنەر = {self.format_value(inputs['t_solvent'])} °C")
-        st.write(f"بارستەی تواوە = {self.format_value(inputs['mass_solute'])} grams")
-        st.write(f"Mr = {self.format_value(inputs['mr'])}")
-        st.write(f"تواوە-mole = {self.format_value(inputs['moles_solute'])}")
-        st.write(f"بارستەی توێنەر = {self.format_value(inputs['kg_solvent'])} kilograms")
 
-FreezingPointCalculator()
+class BoilingPointCalculator:
+    # [Previous methods remain unchanged...]
+
+    def calculate(self):
+        st.write("هەنگاوەکانی ژمێرکاری")
+        st.write("-" * 50)
+
+        inputs = {
+            'delta_tb': self.get_float_value("delta_tb"),
+            'kb': self.get_float_value("kb"),
+            'molality': self.get_float_value("molality"),
+            't_solution': self.get_float_value("t_solution"),
+            't_solvent': self.get_float_value("t_solvent"),
+            'mass_solute': self.get_float_value("mass_solute"),
+            'mr': self.get_float_value("mr"),
+            'moles_solute': self.get_float_value("moles_solute"),
+            'kg_solvent': self.get_float_value("kg_solvent")
+        }
+
+        # Convert units
+        inputs['t_solution'] = self.convert_temperature(
+            inputs['t_solution'],
+            st.session_state.t_solution_unit
+        )
+        inputs['t_solvent'] = self.convert_temperature(
+            inputs['t_solvent'],
+            st.session_state.t_solvent_unit
+        )
+        if inputs['mass_solute'] is not None:
+            inputs['mass_solute'] = self.convert_mass(
+                inputs['mass_solute'],
+                st.session_state.mass_solute_unit,
+                'grams'
+            )
+        if inputs['kg_solvent'] is not None:
+            inputs['kg_solvent'] = self.convert_mass(
+                inputs['kg_solvent'],
+                st.session_state.kg_solvent_unit,
+                'kilograms'
+            )
+
+        calculations = [
+            {
+                'param': 'delta_tb',
+                'func': lambda kb, m: kb * m,
+                'equation': 'Δtb = Kb × molality',
+                'params': ['kb', 'molality']
+            },
+            {
+                'param': 'delta_tb',
+                'func': lambda ts, tsv: ts - tsv,
+                'equation': 'Δtb = گیراوە-T - توێنەر-T',
+                'params': ['t_solution', 't_solvent']
+            },
+            {
+                'param': 'molality',
+                'func': lambda dt, kb: dt / kb,
+                'equation': 'molality = Δtb / Kb',
+                'params': ['delta_tb', 'kb']
+            },
+            {
+                'param': 'molality',
+                'func': lambda mol, kg: mol / kg,
+                'equation': 'molality = تواوە-mole / توێنەر-Kg',
+                'params': ['moles_solute', 'kg_solvent']
+            },
+            {
+                'param': 'moles_solute',
+                'func': lambda mass, mr: mass / mr,
+                'equation': 'تواوە-mole = تواوە-mass / Mr',
+                'params': ['mass_solute', 'mr']
+            },
+            {
+                'param': 'moles_solute',
+                'func': lambda m, kg: m * kg,
+                'equation': 'تواوە-mole = molality × توێنەر-Kg',
+                'params': ['molality', 'kg_solvent']
+            },
+            {
+                'param': 'mass_solute',
+                'func': lambda mol, mr: mol * mr,
+                'equation': 'تواوە-mass = تواوە-mole × Mr',
+                'params': ['moles_solute', 'mr']
+            },
+            {
+                'param': 'kg_solvent',
+                'func': lambda mol, m: mol / m,
+                'equation': 'توێنەر-Kg = تواوە-mole / molality',
+                'params': ['moles_solute', 'molality']
+            },
+            {
+                'param': 'mr',
+                'func': lambda mass, mol: mass / mol,
+                'equation': 'Mr = تواوە-mass / تواوە-mole',
+                'params': ['mass_solute', 'moles_solute']
+            }
+        ]
+
+        # Keep calculating until no new values can be found
+        iteration_count = 0
+        max_iterations = 10  # Prevent infinite loops
+        
+        while iteration_count < max_iterations:
+            found_new_value = False
+            
+            for calc in calculations:
+                param = calc['param']
+                if inputs[param] is None:  # Only try to calculate if we don't have this value
+                    if all(inputs[p] is not None for p in calc['params']):  # All required parameters are available
+                        values = [inputs[p] for p in calc['params']]
+                        result = calc['func'](*values)
+                        self.show_calculation_step(calc['equation'], values, result)
+                        inputs[param] = result
+                        found_new_value = True
+            
+            if not found_new_value:  # If no new values were calculated, we're done
+                break
+                
+            iteration_count += 1
+
+        st.write("-" * 50)
+
+def main():
+    global image1, image2
+    
+    st.markdown(""" <p style='text-align: center; color: gray; font-style: italic;'>
+    بۆ یەکەمین جار ئەم جۆرە بەرنامەیە دروستکراوە و گەشەی پێدراوە لە کوردستان و عێراق دا. هیوادارم سوودی لێوەربگرن.
+    م. هەکاری جلال محمد </p> """, unsafe_allow_html=True)
+    
+    image1, image2 = load_images()
+
+    st.sidebar.title("Choose Calculator")
+    calculator_type = st.sidebar.radio("Select the calculator:", ("نزمبونەوەی پلەی بەستن", "ب
