@@ -1,4 +1,21 @@
 import streamlit as st
+
+# Set page config
+st.set_page_config(page_title="Your App Title", layout="centered", initial_sidebar_state="expanded")
+
+# Optionally, set other theme parameters (if needed)
+st.markdown(
+    """
+    <style>
+    .css-1aumxhk {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+import streamlit as st
 import numpy as np
 from PIL import Image
 import os
