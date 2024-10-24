@@ -154,8 +154,10 @@ class FreezingPointCalculator:
                 'kilograms'
             )
 
-        while True:
-            previous_inputs = inputs.copy()  # Keep track of the previous state
+        calculated_anything = True  # Control flag to track if any calculations are made
+
+        while calculated_anything:
+            calculated_anything = False  # Reset the flag for this iteration
             
             calculations = [
                 {
@@ -200,16 +202,22 @@ class FreezingPointCalculator:
                     'equation': 'تواوە-mass = تواوە-mole × Mr',
                     'params': ['moles_solute', 'mr']
                 },
+                {
+                    'param': 'mr',
+                    'func': lambda mass, mol: mass / mol,
+                    'equation': 'Mr = تواوە-mass / تواوە-mole',
+                    'params': ['mass_solute', 'moles_solute']
+                },
+                {
+                    'param': 'kg_solvent',
+                    'func': lambda mol, m: mol / m,
+                    'equation': 'توێنەر-Kg = تواوە-mole / molality',
+                    'params': ['moles_solute', 'molality']
+                },
             ]
 
             for calculation in calculations:
-                self.try_calculate_value(
-                    inputs, calculation['param'], calculation['func'],
-                    calculation['equation'], calculation['params']
-                )
-
-            if inputs == previous_inputs:  # Exit if no new values were found
-                break
+                self.try_calculate_value(inputs, calculation['param'], calculation['func'], calculation['equation'], calculation['params'])
 
         # Display final results
         st.write("بەرزترین نیشانی ژمێرکاری:")
