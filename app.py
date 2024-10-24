@@ -447,11 +447,9 @@ class BoilingPointCalculator:
 def main():
     global image1, image2
     
-    # Add the text at the top
     st.markdown(""" <p style='text-align: center; color: gray; font-style: italic;'>
     بۆ یەکەمین جار ئەم جۆرە بەرنامەیە دروستکراوە و گەشەی پێدراوە لە کوردستان و عێراق دا. هیوادارم سوودی لێوەربگرن.
     م. هەکاری جلال محمد </p> """, unsafe_allow_html=True)
-    
     image1, image2 = load_images()
 
     st.sidebar.title("Choose Calculator")
