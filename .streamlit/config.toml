@@ -1,11 +1,16 @@
-[theme]
-primaryColor = "#1f77b4"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f2f6"
-textColor = "#262730"
-
 [server]
+# This changes the title and author information
+headless = true
 enableCORS = false
+enableXsrfProtection = true
 
-[global]
-showFooter = false
+[theme]
+primaryColor = "#F39C12"
+backgroundColor = "#FFFFFF"
+textColor = "#000000"
+font = "sans serif"
+
+[general]
+# Change the author name
+title = "Your New Title"
+author = "Your New Author Name"  # Change this line
