@@ -1,12 +1,32 @@
 import streamlit as st
+import numpy as np
+from PIL import Image
+import os
 
-# Replace these image paths with your actual image file paths or URLs
-image1 = "path/to/your/image1.jpg"
-image2 = "path/to/your/image2.jpg"
+def load_images():
+    try:
+        # Get the directory of the current script
+        current_dir = os.path.dirname(__file__)
+        
+        # Construct the full path to the images
+        image1_path = os.path.join(current_dir, "image1.jpg")
+        image2_path = os.path.join(current_dir, "image2.jpg")
+        
+        # Open the images
+        image1 = Image.open(image1_path)
+        image2 = Image.open(image2_path)
+        
+        return image1, image2
+    except FileNotFoundError:
+        st.warning("Image files not found. Please ensure 'image1.jpg' and 'image2.jpg' are in the same directory as this script.")
+        return None, None
+    except Exception as e:
+        st.error(f"An error occurred while loading images: {str(e)}")
+        return None, None
 
 class FreezingPointCalculator:
     def __init__(self):
-        st.title("بەرزبوونەوەی پلەی کوڵان: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی ")
+        st.title("نزمبونەوەی پلەی بەستن: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی")
         self.create_layout()
 
     def create_layout(self):
@@ -19,6 +39,7 @@ class FreezingPointCalculator:
                 st.image(image2, use_column_width=True)
                 st.caption("گروپی تێلێگرام")
 
+
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -27,9 +48,9 @@ class FreezingPointCalculator:
             self.molality_input = st.text_input("**molality:**", key="molality")
 
         with col2:
-            self.t_solution_input = st.text_input("**پلەی کوڵانی گیراوە:**", key="t_solution")
+            self.t_solution_input = st.text_input("**پلەی بەستنی گیراوە:**", key="t_solution")
             self.t_solution_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solution_unit")
-            self.t_solvent_input = st.text_input("**پلەی کوڵانی توێنەر:**", key="t_solvent")
+            self.t_solvent_input = st.text_input("**پلەی بەستنی توێنەر:**", key="t_solvent")
             self.t_solvent_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solvent_unit")
 
         with col3:
@@ -162,7 +183,7 @@ class FreezingPointCalculator:
             },
             {
                 'param': 'molality',
-                'func': lambda m, kg: m / kg,
+                'func': lambda mol, kg: mol / kg,
                 'equation': 'molality = تواوە-mole / توێنەر-Kg',
                 'params': ['moles_solute', 'kg_solvent']
             },
@@ -201,18 +222,24 @@ class FreezingPointCalculator:
         while True:
             changed = False
             for calc in calculations:
-                if self.try_calculate_value(inputs, calc['param'], calc['func'], calc['equation'], calc['params']):
+                if self.try_calculate_value(
+                    inputs,
+                    calc['param'],
+                    calc['func'],
+                    calc['equation'],
+                    calc['params']
+                ):
                     changed = True
             if not changed:
                 break
 
-        for param, value in inputs.items():
-            st.write(f"{param}: {self.format_value(value)}")
+        st.write("-" * 50)
 
+# ... (previous code remains unchanged)
 
 class BoilingPointCalculator:
     def __init__(self):
-        st.title("بەرزبوونەوەی پلەی گەرمی: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی ")
+        st.title("بەرزبوونەوەی پلەی کوڵان: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی ")
         self.create_layout()
 
     def create_layout(self):
@@ -224,7 +251,7 @@ class BoilingPointCalculator:
             with col2:
                 st.image(image2, use_column_width=True)
                 st.caption("گروپی تێلێگرام")
-
+		    
         col1, col2, col3 = st.columns(3)
 
         with col1:
@@ -233,9 +260,9 @@ class BoilingPointCalculator:
             self.molality_input = st.text_input("**molality:**", key="molality")
 
         with col2:
-            self.t_solution_input = st.text_input("**پلەی گەرمی گیراوە:**", key="t_solution")
+            self.t_solution_input = st.text_input("**پلەی کوڵانی گیراوە:**", key="t_solution")
             self.t_solution_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solution_unit")
-            self.t_solvent_input = st.text_input("**پلەی گەرمی توێنەر:**", key="t_solvent")
+            self.t_solvent_input = st.text_input("**پلەی کوڵانی توێنەر:**", key="t_solvent")
             self.t_solvent_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solvent_unit")
 
         with col3:
@@ -248,9 +275,9 @@ class BoilingPointCalculator:
 
         col1, col2 = st.columns(2)
         with col1:
-            self.calculate_button = st.button("**ژمێرکاری**", key="calculate_bp")
+            self.calculate_button = st.button("**ژمێرکاری**", key="calculate")
         with col2:
-            self.clear_button = st.button("**سڕینەوە**", key="clear_bp")
+            self.clear_button = st.button("**سڕینەوە**", key="clear")
 
         if self.calculate_button:
             self.calculate()
@@ -368,7 +395,7 @@ class BoilingPointCalculator:
             },
             {
                 'param': 'molality',
-                'func': lambda m, kg: m / kg,
+                'func': lambda mol, kg: mol / kg,
                 'equation': 'molality = تواوە-mole / توێنەر-Kg',
                 'params': ['moles_solute', 'kg_solvent']
             },
@@ -412,11 +439,32 @@ class BoilingPointCalculator:
             if not changed:
                 break
 
-        for param, value in inputs.items():
-            st.write(f"{param}: {self.format_value(value)}")
+        st.write("بەرزبوونەوەی پلەی کوڵانی گیراوە:")
+        result = inputs['t_solution'] + inputs['delta_tb']
+        st.write(f"**بەرزبوونەوەی پلەی کوڵانی گیراوە:** {self.format_value(result)}")
 
+# Usage
+boiling_point_calculator = BoilingPointCalculator()
+
+
+    
+def main():
+    global image1, image2
+    
+    # Add the text at the top
+    st.markdown(""" <p style='text-align: center; color: gray; font-style: italic;'>
+    بۆ یەکەمین جار ئەم جۆرە بەرنامەیە دروستکراوە و گەشەی پێدراوە لە کوردستان و عێراق دا. هیوادارم سوودی لێوەربگرن.
+    م. هەکاری جلال محمد </p> """, unsafe_allow_html=True)
+    
+    image1, image2 = load_images()
+
+    st.sidebar.title("Choose Calculator")
+    calculator_type = st.sidebar.radio("Select the calculator:", ("نزمبونەوەی پلەی بەستن", "بەرزبونەوەی پلەی کوڵان"))
+
+    if calculator_type == "نزمبونەوەی پلەی بەستن":
+        FreezingPointCalculator()
+    elif calculator_type == "بەرزبونەوەی پلەی کوڵان":
+        BoilingPointCalculator()
 
 if __name__ == "__main__":
-    # Initialize and run calculators
-    FreezingPointCalculator()
-    BoilingPointCalculator()
+    main()
