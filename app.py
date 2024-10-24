@@ -324,4 +324,12 @@ def main():
     image1, image2 = load_images()
 
     st.sidebar.title("Choose Calculator")
-    calculator_type = st.sidebar.radio("Select the calculator:", ("نزمبونەوەی پلەی بەستن", "ب
+    calculator_type = st.sidebar.radio("Select the calculator:", ("نزمبونەوەی پلەی بەستن", "بەرزبونەوەی پلەی کوڵان"))
+
+    if calculator_type == "نزمبونەوەی پلەی بەستن":
+        FreezingPointCalculator()
+    elif calculator_type == "بەرزبونەوەی پلەی کوڵان":
+        BoilingPointCalculator()
+
+if __name__ == "__main__":
+    main()
