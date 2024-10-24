@@ -1,5 +1,4 @@
 [server]
-# This changes the title and author information
 headless = true
 enableCORS = false
 enableXsrfProtection = true
@@ -11,6 +10,4 @@ textColor = "#000000"
 font = "sans serif"
 
 [general]
-# Change the author name
-title = "Your New Title"
-author = "Your New Author Name"  # Change this line
+title = "Your App Title"
