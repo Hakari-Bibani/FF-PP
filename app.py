@@ -24,22 +24,20 @@ def load_images():
         st.error(f"An error occurred while loading images: {str(e)}")
         return None, None
 
-image1, image2 = load_images()
-
 class FreezingPointCalculator:
     def __init__(self):
         st.title("نزمبونەوەی پلەی بەستن: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی")
         self.create_layout()
 
     def create_layout(self):
+        image1, image2 = load_images()
+        
         if image1 is not None and image2 is not None:
             col1, col2 = st.columns(2)
             with col1:
                 st.image(image1, use_column_width=True)
-                st.caption("م.هەکاری جلال")
             with col2:
                 st.image(image2, use_column_width=True)
-                st.caption("گروپی تێلێگرام")
 
         col1, col2, col3 = st.columns(3)
 
@@ -205,55 +203,29 @@ class FreezingPointCalculator:
                 'func': lambda mol, mr: mol * mr,
                 'equation': 'تواوە-mass = تواوە-mole × Mr',
                 'params': ['moles_solute', 'mr']
-            },
-            {
-                'param': 'kg_solvent',
-                'func': lambda mass, m: mass / m,
-                'equation': 'توێنەر-Kg = تواوە-mass / molality',
-                'params': ['mass_solute', 'molality']
-            },
-            {
-                'param': 'kg_solvent',
-                'func': lambda mol, m: mol / m,
-                'equation': 'توێنەر-Kg = تواوە-mole / molality',
-                'params': ['moles_solute', 'molality']
-            },
+            }
         ]
 
-        calculated_params = set()
-
-        while True:
-            something_calculated = False
+        progress = True
+        while progress:
+            progress = False
             for calc in calculations:
-                if calc['param'] not in calculated_params:
-                    if self.try_calculate_value(inputs, calc['param'], calc['func'], calc['equation'], calc['params']):
-                        calculated_params.add(calc['param'])
-                        something_calculated = True
-            if not something_calculated:
-                break
+                if self.try_calculate_value(
+                    inputs, calc['param'],
+                    calc['func'], calc['equation'],
+                    calc['params']
+                ):
+                    progress = True
 
-        for param, value in inputs.items():
-            st.write(f"{param}: {self.format_value(value)}")
-
-class BoilingPointCalculator:
-    def __init__(self):
-        st.title("بەرزبوونەوەی پلەی کوڵان: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی")
-        self.create_layout()
-
-    def create_layout(self):
-        # (The layout for BoilingPointCalculator remains similar to FreezingPointCalculator)
-        # Code for layout here
-
-    def calculate(self):
-        st.write("هەنگاوەکانی ژمێرکاری")
         st.write("-" * 50)
+        st.write(f"Δtf = {self.format_value(inputs['delta_tf'])}")
+        st.write(f"Kf = {self.format_value(inputs['kf'])}")
+        st.write(f"molality = {self.format_value(inputs['molality'])}")
+        st.write(f"پلەی بەستنی گیراوە = {self.format_value(inputs['t_solution'])} °C")
+        st.write(f"پلەی بەستنی توێنەر = {self.format_value(inputs['t_solvent'])} °C")
+        st.write(f"بارستەی تواوە = {self.format_value(inputs['mass_solute'])} grams")
+        st.write(f"Mr = {self.format_value(inputs['mr'])}")
+        st.write(f"تواوە-mole = {self.format_value(inputs['moles_solute'])}")
+        st.write(f"بارستەی توێنەر = {self.format_value(inputs['kg_solvent'])} kilograms")
 
-        # (Similar calculation process for boiling point)
-
-# Main app execution
-def main():
-    freezing_calculator = FreezingPointCalculator()
-    boiling_calculator = BoilingPointCalculator()
-
-if __name__ == "__main__":
-    main()
+FreezingPointCalculator()
