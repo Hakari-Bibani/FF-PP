@@ -1,35 +1,12 @@
 import streamlit as st
-import numpy as np
-from PIL import Image
-import os
 
-def load_images():
-    try:
-        # Get the directory of the current script
-        current_dir = os.path.dirname(__file__)
-        
-        # Construct the full path to the images
-        image1_path = os.path.join(current_dir, "image1.jpg")
-        image2_path = os.path.join(current_dir, "image2.jpg")
-        
-        # Open the images
-        image1 = Image.open(image1_path)
-        image2 = Image.open(image2_path)
-        
-        return image1, image2
-    except FileNotFoundError:
-        st.warning("Image files not found. Please ensure 'image1.jpg' and 'image2.jpg' are in the same directory as this script.")
-        return None, None
-    except Exception as e:
-        st.error(f"An error occurred while loading images: {str(e)}")
-        return None, None
+# Replace these image paths with your actual image file paths or URLs
+image1 = "path/to/your/image1.jpg"
+image2 = "path/to/your/image2.jpg"
 
-image1, image2 = load_images()
-
-# Freezing Point Calculator
 class FreezingPointCalculator:
     def __init__(self):
-        st.title("نزمبونەوەی پلەی بەستن: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی")
+        st.title("بەرزبوونەوەی پلەی کوڵان: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی ")
         self.create_layout()
 
     def create_layout(self):
@@ -50,9 +27,9 @@ class FreezingPointCalculator:
             self.molality_input = st.text_input("**molality:**", key="molality")
 
         with col2:
-            self.t_solution_input = st.text_input("**پلەی بەستنی گیراوە:**", key="t_solution")
+            self.t_solution_input = st.text_input("**پلەی کوڵانی گیراوە:**", key="t_solution")
             self.t_solution_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solution_unit")
-            self.t_solvent_input = st.text_input("**پلەی بەستنی توێنەر:**", key="t_solvent")
+            self.t_solvent_input = st.text_input("**پلەی کوڵانی توێنەر:**", key="t_solvent")
             self.t_solvent_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solvent_unit")
 
         with col3:
@@ -185,7 +162,7 @@ class FreezingPointCalculator:
             },
             {
                 'param': 'molality',
-                'func': lambda moles, kg: moles / kg,
+                'func': lambda m, kg: m / kg,
                 'equation': 'molality = تواوە-mole / توێنەر-Kg',
                 'params': ['moles_solute', 'kg_solvent']
             },
@@ -197,73 +174,249 @@ class FreezingPointCalculator:
             },
             {
                 'param': 'moles_solute',
-                'func': lambda molality, kg: molality * kg,
+                'func': lambda m, kg: m * kg,
                 'equation': 'تواوە-mole = molality × توێنەر-Kg',
                 'params': ['molality', 'kg_solvent']
             },
             {
                 'param': 'mass_solute',
-                'func': lambda moles, mr: moles * mr,
+                'func': lambda mol, mr: mol * mr,
                 'equation': 'تواوە-mass = تواوە-mole × Mr',
                 'params': ['moles_solute', 'mr']
             },
             {
                 'param': 'kg_solvent',
-                'func': lambda moles, molality: moles / molality,
+                'func': lambda mol, m: mol / m,
                 'equation': 'توێنەر-Kg = تواوە-mole / molality',
                 'params': ['moles_solute', 'molality']
             },
+            {
+                'param': 'mr',
+                'func': lambda mass, mol: mass / mol,
+                'equation': 'Mr = تواوە-mass / تواوە-mole',
+                'params': ['mass_solute', 'moles_solute']
+            }
         ]
 
-        for calc in calculations:
-            self.try_calculate_value(
-                inputs, calc['param'],
-                calc['func'], calc['equation'],
-                calc['params']
-            )
+        while True:
+            changed = False
+            for calc in calculations:
+                if self.try_calculate_value(inputs, calc['param'], calc['func'], calc['equation'], calc['params']):
+                    changed = True
+            if not changed:
+                break
 
+        for param, value in inputs.items():
+            st.write(f"{param}: {self.format_value(value)}")
+
+
+class BoilingPointCalculator:
+    def __init__(self):
+        st.title("بەرزبوونەوەی پلەی گەرمی: ژمێرکاری بۆ تواوەی نا ئەلیکترۆلیتی ")
+        self.create_layout()
+
+    def create_layout(self):
+        if image1 is not None and image2 is not None:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.image(image1, use_column_width=True)
+                st.caption("م.هەکاری جلال")
+            with col2:
+                st.image(image2, use_column_width=True)
+                st.caption("گروپی تێلێگرام")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            self.delta_tb_input = st.text_input("Δtb:", key="delta_tb")
+            self.kb_input = st.text_input("Kb:", key="kb")
+            self.molality_input = st.text_input("**molality:**", key="molality")
+
+        with col2:
+            self.t_solution_input = st.text_input("**پلەی گەرمی گیراوە:**", key="t_solution")
+            self.t_solution_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solution_unit")
+            self.t_solvent_input = st.text_input("**پلەی گەرمی توێنەر:**", key="t_solvent")
+            self.t_solvent_unit = st.selectbox("یەکە:", ["Celsius", "Kelvin"], key="t_solvent_unit")
+
+        with col3:
+            self.mass_solute_input = st.text_input("**بارستەی تواوە:**", key="mass_solute")
+            self.mass_solute_unit = st.selectbox("یەکە:", ["grams", "kilograms"], key="mass_solute_unit")
+            self.mr_input = st.text_input("**بارستەی مۆڵی  Mr:**", key="mr")
+            self.moles_solute_input = st.text_input("**مۆڵی تواوە:**", key="moles_solute")
+            self.kg_solvent_input = st.text_input("**بارستەی توێنەر:**", key="kg_solvent")
+            self.kg_solvent_unit = st.selectbox("یەکە:", ["grams", "kilograms"], key="kg_solvent_unit")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            self.calculate_button = st.button("**ژمێرکاری**", key="calculate_bp")
+        with col2:
+            self.clear_button = st.button("**سڕینەوە**", key="clear_bp")
+
+        if self.calculate_button:
+            self.calculate()
+        if self.clear_button:
+            self.clear_inputs()
+
+    def clear_inputs(self):
+        keys_to_clear = [
+            "delta_tb", "kb", "molality", "t_solution", "t_solvent",
+            "mass_solute", "mr", "moles_solute", "kg_solvent"
+        ]
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+
+        for key in keys_to_clear:
+            st.session_state[key] = ""
+
+    def get_float_value(self, key):
+        try:
+            value = st.session_state[key].strip()
+            return float(value) if value else None
+        except ValueError:
+            return None
+
+    def convert_temperature(self, value, from_unit):
+        if value is None:
+            return None
+        if from_unit == 'Kelvin':
+            return value - 273.15
+        return value
+
+    def convert_mass(self, value, from_unit, to_unit):
+        if value is None or from_unit == to_unit:
+            return value
+        if from_unit == 'grams' and to_unit == 'kilograms':
+            return value / 1000
+        if from_unit == 'kilograms' and to_unit == 'grams':
+            return value * 1000
+
+    def format_value(self, value):
+        return f"{value:.4f}" if value is not None else "unknown"
+
+    def show_calculation_step(self, equation, values, result):
+        if equation == 'Δtb = گیراوە-T - توێنەر-T':
+            values_str = f" = {values[0]:.4f} - {values[1]:.4f}"
+        else:
+            values_str = " = " + " / ".join(f"{v:.4f}" for v in values)
+        st.write(f"{equation}{values_str} = {result:.4f}")
+
+    def try_calculate_value(self, inputs, param_name, calculation_func, equation, params_needed):
+        if inputs[param_name] is None and all(inputs[p] is not None for p in params_needed):
+            values = [inputs[p] for p in params_needed]
+            result = calculation_func(*values)
+            self.show_calculation_step(equation, values, result)
+            inputs[param_name] = result
+            return True
+        return False
+
+    def calculate(self):
+        st.write("هەنگاوەکانی ژمێرکاری")
         st.write("-" * 50)
-        st.write("ئەنجامی ژمێرکاریکردن")
 
-        results_labels = {
-            'delta_tf': "پلەی بەستن",
-            'molality': "ڕووبەر",
-            'moles_solute': "مۆڵی تواوە",
-            'mass_solute': "بارستەی تواوە"
+        inputs = {
+            'delta_tb': self.get_float_value("delta_tb"),
+            'kb': self.get_float_value("kb"),
+            'molality': self.get_float_value("molality"),
+            't_solution': self.get_float_value("t_solution"),
+            't_solvent': self.get_float_value("t_solvent"),
+            'mass_solute': self.get_float_value("mass_solute"),
+            'mr': self.get_float_value("mr"),
+            'moles_solute': self.get_float_value("moles_solute"),
+            'kg_solvent': self.get_float_value("kg_solvent")
         }
 
-        for param, label in results_labels.items():
-            value = self.format_value(inputs[param])
-            st.write(f"{label}: {value}")
+        inputs['t_solution'] = self.convert_temperature(
+            inputs['t_solution'],
+            st.session_state.t_solution_unit
+        )
+        inputs['t_solvent'] = self.convert_temperature(
+            inputs['t_solvent'],
+            st.session_state.t_solvent_unit
+        )
+        if inputs['mass_solute'] is not None:
+            inputs['mass_solute'] = self.convert_mass(
+                inputs['mass_solute'],
+                st.session_state.mass_solute_unit,
+                'grams'
+            )
+        if inputs['kg_solvent'] is not None:
+            inputs['kg_solvent'] = self.convert_mass(
+                inputs['kg_solvent'],
+                st.session_state.kg_solvent_unit,
+                'kilograms'
+            )
 
-# Boiling Point Calculator
-def boiling_point_calculator():
-    kb = st.number_input("بەھای جوشینەوە (Kb):")
-    molality = st.number_input("ڕووبەر:")
-    bp_pure_solvent = st.number_input("پلەی جوشینەوەی توێنەر (پلەی سیلیسیوس):")
+        calculations = [
+            {
+                'param': 'delta_tb',
+                'func': lambda kb, m: kb * m,
+                'equation': 'Δtb = Kb × molality',
+                'params': ['kb', 'molality']
+            },
+            {
+                'param': 'delta_tb',
+                'func': lambda ts, tsv: ts - tsv,
+                'equation': 'Δtb = گیراوە-T - توێنەر-T',
+                'params': ['t_solution', 't_solvent']
+            },
+            {
+                'param': 'molality',
+                'func': lambda dt, kb: dt / kb,
+                'equation': 'molality = Δtb / Kb',
+                'params': ['delta_tb', 'kb']
+            },
+            {
+                'param': 'molality',
+                'func': lambda m, kg: m / kg,
+                'equation': 'molality = تواوە-mole / توێنەر-Kg',
+                'params': ['moles_solute', 'kg_solvent']
+            },
+            {
+                'param': 'moles_solute',
+                'func': lambda mass, mr: mass / mr,
+                'equation': 'تواوە-mole = تواوە-mass / Mr',
+                'params': ['mass_solute', 'mr']
+            },
+            {
+                'param': 'moles_solute',
+                'func': lambda m, kg: m * kg,
+                'equation': 'تواوە-mole = molality × توێنەر-Kg',
+                'params': ['molality', 'kg_solvent']
+            },
+            {
+                'param': 'mass_solute',
+                'func': lambda mol, mr: mol * mr,
+                'equation': 'تواوە-mass = تواوە-mole × Mr',
+                'params': ['moles_solute', 'mr']
+            },
+            {
+                'param': 'kg_solvent',
+                'func': lambda mol, m: mol / m,
+                'equation': 'توێنەر-Kg = تواوە-mole / molality',
+                'params': ['moles_solute', 'molality']
+            },
+            {
+                'param': 'mr',
+                'func': lambda mass, mol: mass / mol,
+                'equation': 'Mr = تواوە-mass / تواوە-mole',
+                'params': ['mass_solute', 'moles_solute']
+            }
+        ]
 
-    if st.button("ژمێرکردن"):
-        delta_tb = kb * molality
-        bp_solution = bp_pure_solvent + delta_tb
-        st.write(f"Delta Tb: {delta_tb:.2f} °C")
-        st.write(f"پلەی جوشینەوەی گیراوە: {bp_solution:.2f} °C")
+        while True:
+            changed = False
+            for calc in calculations:
+                if self.try_calculate_value(inputs, calc['param'], calc['func'], calc['equation'], calc['params']):
+                    changed = True
+            if not changed:
+                break
 
-def clear_button():
-    if st.button("Clear سڕینەوە"):
-        st.session_state.clear()
+        for param, value in inputs.items():
+            st.write(f"{param}: {self.format_value(value)}")
 
-def main():
-    # Choose a calculator
-    menu = ["پلەی بەستن", "پلەی جوشینەوە"]
-    choice = st.sidebar.selectbox("Select Calculation Type", menu)
 
-    if choice == "پلەی بەستن":
-        FreezingPointCalculator()
-    elif choice == "پلەی جوشینەوە":
-        boiling_point_calculator()
-
-    # Clear button
-    clear_button()
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    # Initialize and run calculators
+    FreezingPointCalculator()
+    BoilingPointCalculator()
